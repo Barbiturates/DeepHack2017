@@ -22,7 +22,7 @@ log = logging.getLogger(name=__name__)
 
 
 def load_gym_env(game_name='Skiing-v0'):
-    log.debug(f'Loading {game_name} environment')
+    log.debug('Loading {} environment'.format(game_name))
     env = gym.make('Skiing-v0')
     env.reset()
     return env
@@ -133,14 +133,20 @@ def main(agent_name,
 
                 # timeout the sim
                 if iteration == max_steps:
-                    msg = f'Episode {episode} timed out after {max_steps} steps'
+                    msg = 'Episode {} timed out after {} steps'.format(
+                        episode, max_steps
+                    )
                     log.debug(msg)
 
                 msg = (
-                    f'Episode {episode} ({iteration} steps): '
-                    f'{int(total_reward),}/{int(total_reward + 15000)}'
-                    f'(Sloth: {int(total_reward + goal_reward)},'
-                    f' Slaloms Missed: {slaloms_missed})'
+                    'Episode {} ({} steps): {}/{}, (Sloth: {}, Slaloms Missed: {})'.format(
+                        episode,
+                        iteration,
+                        int(total_reward),
+                        int(total_reward + 15000),
+                        int(total_reward + goal_reward),
+                        slaloms_missed
+                    )
                 )
                 log.debug(msg)
 
@@ -154,16 +160,19 @@ def main(agent_name,
                 })
 
                 if episode % 100 == 0 and episode != 0:
-                    log.debug(f'100 episode average reward was {np.mean(total_rewards[-100:])}')
+                    log.debug('100 episode average reward was {}'.format(np.mean(total_rewards[-100:])))
                     # save the model
                     agent_path = os.path.join(
-                        results_dir, f'agent_{episode}.pkl'
+                        results_dir, 'agent_{}.pkl'.format(episode)
                     )
                     with open(agent_path, 'wb') as fout:
                         pickle.dump(agent, fout)
 
-        log.debug(f'Last 100 episode average reward was {np.mean(total_rewards[-100:])}')
-        log.debug(f'Best {episode_count}-episode average reward was {np.mean(total_rewards)}')
+        log.debug('Last 100 episode average reward was {}'.format(
+            np.mean(total_rewards[-100:])))
+        log.debug('Best {}-episode average reward was {}'.format(
+            episode_count, np.mean(total_rewards)
+        ))
 
     finally:
         if monitor:
@@ -180,13 +189,16 @@ def main(agent_name,
         df.to_csv(os.path.join(results_dir, 'rewards.csv'))
 
         log.info(
-            f'Average reward of last 100 episodes: {df.reward.values[-100:].mean()}'
+            'Average reward of last 100 episodes: {}'.format(
+                df.reward.values[-100:].mean())
         )
         log.info(
-            f"Average cost of elapsed time over last 100 episodes: {df.sloth.values[-100:].mean()}"
+            "Average cost of elapsed time over last 100 episodes: {}".format(
+                df.sloth.values[-100:].mean())
         )
         log.info(
-            f'Average number of slaloms missed over last 100 episodes: {df.missed.values[-100:].mean()}'
+            'Average number of slaloms missed over last 100 episodes: {}'.format(
+                df.missed.values[-100:].mean())
         )
 
         with open(os.path.join(results_dir, 'agent_args.json'), 'w') as fout:
@@ -194,7 +206,7 @@ def main(agent_name,
 
     if upload:
         # Upload to the scoreboard.
-        log.info(f'Uploading results from {results_dir}')
+        log.info('Uploading results from {}'.format(results_dir))
         gym.upload(results_dir)
 
 
