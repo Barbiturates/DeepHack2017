@@ -8,7 +8,7 @@ LEARNING_SEQ_LEN = 4
 
 
 class Memory:
-    def __init__(self, size, batch_size=BATCH_SIZE):
+    def __init__(self, size=MEMORY_SIZE, batch_size=BATCH_SIZE):
         self.size = size
         self.batch_size = batch_size
         self.states = np.zeros((MEMORY_SIZE, IMG_HEIGHT, IMG_WIDTH))
@@ -26,18 +26,23 @@ class Memory:
         self.is_done[self.mem_ptr] = int(done)
         self.mem_ptr = (self.mem_ptr + 1) % MEMORY_SIZE
 
-    def get_batch(self):
-        if self.mem_ptr > self.batch_size:
-            idx = np.random.randint(LEARNING_SEQ_LEN - 1, self.mem_ptr - 1, self.batch_size)
-            states_batch = np.zeros((self.batch_size, LEARNING_SEQ_LEN, IMG_HEIGHT, IMG_WIDTH))
-            next_states_batch = np.zeros((self.batch_size, LEARNING_SEQ_LEN, IMG_HEIGHT, IMG_WIDTH))
+    def get_batch(self, random=True):
+        if self.mem_ptr > self.batch_size or not random:
+            batch_length = LEARNING_SEQ_LEN
+            if random:
+                idx = np.random.randint(LEARNING_SEQ_LEN - 1, self.mem_ptr - 1, self.batch_size)
+            else:
+                idx = self.mem_ptr
+                batch_length -= 1
+            states_batch = np.zeros((self.batch_size, batch_length, IMG_HEIGHT, IMG_WIDTH))
+            next_states_batch = np.zeros((self.batch_size, batch_length, IMG_HEIGHT, IMG_WIDTH))
             actions_batch = np.zeros((self.batch_size,))
             rewards_batch = np.zeros((self.batch_size,))
             is_done_batch = np.zeros((self.batch_size,))
 
             for i in range(len(idx)):
-                states_batch[i, :, :, :] = self.states[idx[i] - LEARNING_SEQ_LEN:idx[i]]
-                next_states_batch[i, :, :, :] = self.next_states[idx[i] - LEARNING_SEQ_LEN:idx[i]]
+                states_batch[i, :, :, :] = self.states[idx[i] - batch_length:idx[i]]
+                next_states_batch[i, :, :, :] = self.next_states[idx[i] - batch_length:idx[i]]
                 actions_batch[i] = self.actions[idx[i]]
                 rewards_batch[i] = self.rewards[idx[i]]
                 is_done_batch[i] = self.is_done[idx[i]]
