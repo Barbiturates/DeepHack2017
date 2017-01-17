@@ -76,7 +76,7 @@ def main(agent_name,
         env.monitor.start(results_dir)
 
     episode_count = env.spec.trials if n_episodes is None else n_episodes
-    max_steps = env.spec.timestep_limit
+    max_steps = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
 
     # track total rewards
     total_rewards = []
