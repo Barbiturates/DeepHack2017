@@ -50,7 +50,7 @@ def main(agent_name,
     memory = Memory()
 
     # loaf the agent
-    agent = agents.Random()
+    agent = agents.Reinforce()
 
     if seed is not None:
         random.seed(seed)
