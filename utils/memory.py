@@ -1,6 +1,7 @@
 import numpy as np
 
 BATCH_SIZE = 32
+# NEEHOOYA ZH NEPONYATNO, SKOLKO NOOLEY
 MEMORY_SIZE = 1000000 # 10 ** 5
 IMG_HEIGHT = 84
 IMG_WIDTH = 84
@@ -17,6 +18,7 @@ class Memory:
         self.rewards = np.zeros((MEMORY_SIZE,))
         self.is_done = np.zeros((MEMORY_SIZE,))
         self.mem_ptr = 0
+        self.n_examples = 0
 
     def add(self, state, action, reward, next_state, done):
         self.states[self.mem_ptr, :, :] = state
@@ -25,12 +27,17 @@ class Memory:
         self.rewards[self.mem_ptr] = reward
         self.is_done[self.mem_ptr] = int(done)
         self.mem_ptr = (self.mem_ptr + 1) % MEMORY_SIZE
+        self.n_examples = np.min([MEMORY_SIZE, self.n_examples + 1])
+
+    def get_last_n(self, n=3):
+        assert self.mem_ptr >= n
+        return self.states[self.mem_ptr-n:self.mem_ptr]
 
     def get_batch(self, random=True):
         if self.mem_ptr > self.batch_size or not random:
             batch_length = LEARNING_SEQ_LEN
             if random:
-                idx = np.random.randint(LEARNING_SEQ_LEN - 1, self.mem_ptr - 1, self.batch_size)
+                idx = np.random.randint(LEARNING_SEQ_LEN, self.mem_ptr - 1, self.batch_size)
             else:
                 idx = self.mem_ptr
                 batch_length -= 1
@@ -46,5 +53,8 @@ class Memory:
                 actions_batch[i] = self.actions[idx[i]]
                 rewards_batch[i] = self.rewards[idx[i]]
                 is_done_batch[i] = self.is_done[idx[i]]
+
+            states_batch = np.transpose(states_batch, axes=(0, 2, 3, 1))
+            next_states_batch = np.transpose(next_states_batch, axes=(0, 2, 3, 1))
 
             return states_batch, actions_batch, rewards_batch, next_states_batch, is_done_batch

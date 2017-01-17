@@ -25,6 +25,8 @@ class Reinforce(agents.base.Agent):
         self.model = model.get_model_deepmind()
 
     def act(self, state, *args, **kwargs):
+        state = np.expand_dims(state, 0)
+        assert len(state.shape) == 4
         return np.argmax(self.model.predict(state))
 
     def react(self, batch, *args, **kwargs):
@@ -43,9 +45,9 @@ class Reinforce(agents.base.Agent):
         targets = preq.copy()
         for i, action in enumerate(actions):
             if not dones[i]:
-                targets[i, action] = rewards[i] + self.discount * maxpostq[i]
+                targets[i, action] = rewards[i] + self.discount * maxpostq[action]
             else:
                 targets[i, action] = rewards[i]
 
         # back-propagation pass for states and targets
-        self.model.fit(states, targets)
+        self.model.train_on_batch(states, targets)

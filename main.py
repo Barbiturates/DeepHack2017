@@ -104,25 +104,32 @@ def main(agent_name,
                     if render:
                         env.render()
 
-                    # ask the agent what to do next
-                    action = agent.act(image, centiseconds=-reward)
+                    img = preproc.preproc_img(image)[None, :, :]
+                    if memory.n_examples >= 3:
+                        nearest_past = memory.get_last_n()
+                        # ask the agent what to do next
+                        nearest_past = np.concatenate([nearest_past, img], axis=0)
+                        nearest_past = np.transpose(nearest_past, (1, 2, 0))
+                        action = agent.act(nearest_past, centiseconds=-reward)
+                    else:
+                        action = 0
 
                     # take the action and get the new state and reward
                     new_image, reward, done, _ = env.step(action)
                     total_reward += reward
 
                     # Update memory
-                    img = preproc.preproc_img(image)
                     new_img = preproc.preproc_img(new_image)
                     memory.add(img, action, reward, new_img, done)
 
-                    # feed back to the agent on every FRAME_SKIPPING frame
-                    if iteration % FRAME_SKIPPING == 0:
-                        batch = memory.get_batch()
-                        agent.react(
-                            batch,
-                            centiseconds=((-reward) % 10) + 1
-                        )
+                    batch = memory.get_batch()
+                    if batch is not None:
+                        # feed back to the agent on every FRAME_SKIPPING frame
+                        if iteration % FRAME_SKIPPING == 0:
+                            agent.react(
+                                batch,
+                                centiseconds=((-reward) % 10) + 1
+                            )
 
                     if done:
                         # calculate components of reward
