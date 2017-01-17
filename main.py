@@ -105,7 +105,7 @@ def main(agent_name,
                         env.render()
 
                     if iteration % 10000 == 0:
-                        agent.model.save_weights("model_%d.ckpt" % iteration // 10000)
+                        agent.model.save_weights("model_%d.ckpt" % (iteration // 10000))
 
                     img = preproc.preproc_img(image)[None, :, :]
                     if memory.n_examples >= 3:
