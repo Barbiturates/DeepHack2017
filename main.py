@@ -18,6 +18,7 @@ import tqdm
 import agents
 
 from utils.memory import Memory
+from utils import preprocessing as preproc
 
 FRAME_SKIPPING = 4
 
@@ -111,7 +112,9 @@ def main(agent_name,
                     total_reward += reward
 
                     # Update memory
-                    memory.add(image, action, reward, new_image, done)
+                    img = preproc.preproc_img(image)
+                    new_img = preproc.preproc_img(new_image)
+                    memory.add(img, action, reward, new_img, done)
 
                     # feed back to the agent on every FRAME_SKIPPING frame
                     if iteration % FRAME_SKIPPING == 0:
