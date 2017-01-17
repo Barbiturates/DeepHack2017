@@ -17,7 +17,7 @@ class Reinforce(agents.base.Agent):
                  n_history=5,
                  discount=0.99,
                  iteration_size=75,
-                 batch_size=3000):
+                 batch_size=32):
         super(Reinforce, self).__init__()
         self.discount = discount
         self.iteration_size = iteration_size
@@ -25,23 +25,34 @@ class Reinforce(agents.base.Agent):
         self.model = model.get_model_deepmind()
 
         self.state_mem = np.zeros((MEMORY_SIZE, IMG_HEIGHT, IMG_WIDTH))
+        self.new_state_mem = np.zeros((MEMORY_SIZE, IMG_HEIGHT, IMG_WIDTH))
         self.action_mem = np.zeros((MEMORY_SIZE, ))
         self.reward_mem = np.zeros((MEMORY_SIZE, ))
         self.mem_ptr = 0
+        self.state_count = 0
 
     def act(self, state, *args, **kwargs):
-        return np.argmax(model.predict(state))
+        return np.argmax(self.model.predict(state))
 
-    def react(self, state, action, reward, done, new_state, *args, **kwargs):
-        self.state_mem[self.mem_ptr, :, :] = state
-        self.action_mem[self.mem_ptr] = action
-        self.reward_mem[self.mem_ptr] = reward
-        self.mem_ptr = (self.mem_ptr + 1) % MEMORY_SIZE
+    def react(self, batch, *args, **kwargs):
+        states, actions, rewards, new_states, dones = batch
 
-        if self.mem_ptr > LEARNING_SEQ_LEN:
-            idx = np.random.randint(LEARNING_SEQ_LEN-1, self.mem_ptr-1, self.batch_size)
-            image_batch = np.zeros((self.batch_size, LEARNING_SEQ_LEN, IMG_HEIGHT, IMG_WIDTH))
-            for i in range(LEARNING_SEQ_LEN):
-                image_batch[:, i, :, :] = self.state_mem[idx-i]
-            
-            pass
+        # feed-forward pass for new states to get Q-values
+        postq = self.model.predict(new_states, self.batch_size)
+
+        # calculate max Q-value for each new state
+        maxpostq = np.max(postq, axis=0)
+
+        # feed-forward pass for states
+        preq = self.model.predict(states, self.batch_size)
+
+        # collect targets
+        targets = preq.copy()
+        for i, action in enumerate(actions):
+            if not dones[i]:
+                targets[i, action] = rewards[i] + self.discount * maxpostq[i]
+            else:
+                targets[i, action] = rewards[i]
+
+        # back-propagation pass for states and targets
+        self.model.fit(states, targets)
