@@ -23,7 +23,13 @@ from utils import preprocessing as preproc
 FRAME_SKIPPING = 4
 
 gym.undo_logger_setup()
-log = logging.getLogger(name=__name__)
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+fh = logging.FileHandler('log.file')
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+log.addHandler(fh)
 
 
 def load_gym_env(game_name='Skiing-v0'):
