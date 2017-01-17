@@ -43,7 +43,7 @@ def main(agent_name,
     env = load_gym_env()
 
     # loaf the agent
-    agent = agents.Random()
+    agent = agents.Reinforce()
 
     if seed is not None:
         random.seed(seed)
