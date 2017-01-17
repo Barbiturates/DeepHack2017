@@ -8,6 +8,7 @@ MEMORY_SIZE = 10 ** 5
 IMG_WIDTH = 84
 IMG_HEIGHT = 84
 LEARNING_SEQ_LEN = 4
+EPSILON = 1e-1
 
 
 class Reinforce(agents.base.Agent):
@@ -27,7 +28,10 @@ class Reinforce(agents.base.Agent):
     def act(self, state, *args, **kwargs):
         state = np.expand_dims(state, 0)
         assert len(state.shape) == 4
-        return np.argmax(self.model.predict(state))
+        if np.random.rand() < EPSILON:
+            return np.random.randint(0, 3, 1)
+        else:
+            return np.argmax(self.model.predict(state))
 
     def react(self, batch, *args, **kwargs):
         states, actions, rewards, new_states, dones = batch
@@ -44,6 +48,7 @@ class Reinforce(agents.base.Agent):
         # collect targets
         targets = preq.copy()
         for i, action in enumerate(actions):
+            action = int(action)
             if not dones[i]:
                 targets[i, action] = rewards[i] + self.discount * maxpostq[action]
             else:
