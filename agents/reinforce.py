@@ -50,9 +50,9 @@ class Reinforce(agents.base.Agent):
         for i, action in enumerate(actions):
             action = int(action)
             if not dones[i]:
-                targets[i, action] = rewards[i] + self.discount * maxpostq[action]
+                targets[i, int(action)] = rewards[i] + self.discount * maxpostq[int(action)]
             else:
-                targets[i, action] = rewards[i]
+                targets[i, int(action)] = rewards[i]
 
         # back-propagation pass for states and targets
         self.model.train_on_batch(states, targets)
