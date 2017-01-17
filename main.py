@@ -17,6 +17,10 @@ import tqdm
 
 import agents
 
+from utils.memory import Memory
+
+FRAME_SKIPPING = 4
+
 gym.undo_logger_setup()
 log = logging.getLogger(name=__name__)
 
@@ -41,6 +45,9 @@ def main(agent_name,
 
     # load the gym
     env = load_gym_env()
+
+    # Initialize memory
+    memory = Memory()
 
     # loaf the agent
     agent = agents.Random()
@@ -103,15 +110,16 @@ def main(agent_name,
                     new_image, reward, done, _ = env.step(action)
                     total_reward += reward
 
-                    # feed back to the agent
-                    agent.react(
-                        image,
-                        action,
-                        reward,
-                        done,
-                        new_image,
-                        centiseconds=((-reward) % 10) + 1
-                    )
+                    # Update memory
+                    memory.add(image, action, reward, new_image, done)
+
+                    # feed back to the agent on every FRAME_SKIPPING frame
+                    if iteration % FRAME_SKIPPING == 0:
+                        batch = memory.get_batch()
+                        agent.react(
+                            batch,
+                            centiseconds=((-reward) % 10) + 1
+                        )
 
                     if done:
                         # calculate components of reward
