@@ -30,7 +30,7 @@ class Reinforce(agents.base.Agent):
         self.mem_ptr = 0
 
     def act(self, state, *args, **kwargs):
-        return np.argmax(model.predict(state))
+        return np.argmax(self.model.predict(state))
 
     def react(self, state, action, reward, done, new_state, *args, **kwargs):
         self.state_mem[self.mem_ptr, :, :] = state
