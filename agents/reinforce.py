@@ -24,13 +24,6 @@ class Reinforce(agents.base.Agent):
         self.batch_size = batch_size
         self.model = model.get_model_deepmind()
 
-        self.state_mem = np.zeros((MEMORY_SIZE, IMG_HEIGHT, IMG_WIDTH))
-        self.new_state_mem = np.zeros((MEMORY_SIZE, IMG_HEIGHT, IMG_WIDTH))
-        self.action_mem = np.zeros((MEMORY_SIZE, ))
-        self.reward_mem = np.zeros((MEMORY_SIZE, ))
-        self.mem_ptr = 0
-        self.state_count = 0
-
     def act(self, state, *args, **kwargs):
         return np.argmax(self.model.predict(state))
 
