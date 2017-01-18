@@ -4,11 +4,11 @@ from models import model
 
 
 # Number of past events to store results about
-MEMORY_SIZE = 10 ** 5
+MEMORY_SIZE = 10 ** 3
 IMG_WIDTH = 84
 IMG_HEIGHT = 84
-LEARNING_SEQ_LEN = 4
-EPSILON = 1e-1
+LEARNING_SEQ_LEN = 10
+EPSILON = 5e-2
 
 
 class Reinforce(agents.base.Agent):
@@ -16,7 +16,7 @@ class Reinforce(agents.base.Agent):
     def __init__(self,
                  learning=True,
                  n_history=5,
-                 discount=0.99,
+                 discount=0.7,
                  iteration_size=75,
                  batch_size=32):
         super(Reinforce, self).__init__()
@@ -24,11 +24,13 @@ class Reinforce(agents.base.Agent):
         self.iteration_size = iteration_size
         self.batch_size = batch_size
         self.model = model.get_model_deepmind()
+        self.iter_counter = 0.0
 
     def act(self, state, *args, **kwargs):
+        self.iter_counter += 0.01
         state = np.expand_dims(state, 0)
         assert len(state.shape) == 4
-        if np.random.rand() < EPSILON:
+        if np.random.rand() < np.fmax(EPSILON, 0.1 - self.iter_counter * (0.1 - 1) / 10 ** 5):
             return np.random.randint(0, 3, 1)
         else:
             return np.argmax(self.model.predict(state))
