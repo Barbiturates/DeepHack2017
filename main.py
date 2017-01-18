@@ -107,8 +107,8 @@ def main(agent_name,
                     # update progress bar
                     pbar.update(n=1)
 
-                    if render:
-                        env.render()
+                    # if render:
+                    #     env.render()
 
                     if iteration % 10000 == 0:
                         agent.model.save_weights("model_%d.ckpt" % (iteration // 10000))
@@ -135,12 +135,16 @@ def main(agent_name,
                     if batch is not None:
                         # feed back to the agent on every FRAME_SKIPPING frame
                         if iteration % FRAME_SKIPPING == 0:
-                            agent.react(
+                            predict = agent.react(
                                 batch,
                                 centiseconds=((-reward) % 10) + 1
                             )
+                            if iteration % 1000 == 0:
+                                print(predict)
 
                     if done:
+                        memory.add_final_reward(reward)
+
                         # calculate components of reward
                         pos_reward = int(-reward)
                         goal_reward = pos_reward - (pos_reward % 500)
@@ -149,6 +153,9 @@ def main(agent_name,
                             slaloms_missed = 20
 
                         pbar.update(max_steps - iteration - 1)
+
+                        print('slaloms_missed=%d, episode=%d/%d' %
+                              (slaloms_missed, episode, episode_count))
                         break
                     else:
                         # update the old state
