@@ -56,3 +56,5 @@ class Reinforce(agents.base.Agent):
 
         # back-propagation pass for states and targets
         self.model.train_on_batch(states, targets)
+
+        return postq
