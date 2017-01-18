@@ -17,8 +17,19 @@ import tqdm
 
 import agents
 
+from utils.memory import Memory
+from utils import preprocessing as preproc
+
+FRAME_SKIPPING = 4
+
 gym.undo_logger_setup()
-log = logging.getLogger(name=__name__)
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+fh = logging.FileHandler('log.file')
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+log.addHandler(fh)
 
 
 def load_gym_env(game_name='Skiing-v0'):
@@ -42,8 +53,11 @@ def main(agent_name,
     # load the gym
     env = load_gym_env()
 
+    # Initialize memory
+    memory = Memory()
+
     # loaf the agent
-    agent = agents.Random()
+    agent = agents.Reinforce()
 
     if seed is not None:
         random.seed(seed)
@@ -68,7 +82,7 @@ def main(agent_name,
         env.monitor.start(results_dir)
 
     episode_count = env.spec.trials if n_episodes is None else n_episodes
-    max_steps = env.spec.timestep_limit
+    max_steps = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
 
     # track total rewards
     total_rewards = []
@@ -96,22 +110,35 @@ def main(agent_name,
                     if render:
                         env.render()
 
-                    # ask the agent what to do next
-                    action = agent.act(image, centiseconds=-reward)
+                    if iteration % 10000 == 0:
+                        agent.model.save_weights("model_%d.ckpt" % (iteration // 10000))
+
+                    img = preproc.preproc_img(image)[None, :, :]
+                    if memory.n_examples >= 3:
+                        nearest_past = memory.get_last_n()
+                        # ask the agent what to do next
+                        nearest_past = np.concatenate([nearest_past, img], axis=0)
+                        nearest_past = np.transpose(nearest_past, (1, 2, 0))
+                        action = agent.act(nearest_past, centiseconds=-reward)
+                    else:
+                        action = 0
 
                     # take the action and get the new state and reward
                     new_image, reward, done, _ = env.step(action)
                     total_reward += reward
 
-                    # feed back to the agent
-                    agent.react(
-                        image,
-                        action,
-                        reward,
-                        done,
-                        new_image,
-                        centiseconds=((-reward) % 10) + 1
-                    )
+                    # Update memory
+                    new_img = preproc.preproc_img(new_image)
+                    memory.add(img, action, reward, new_img, done)
+
+                    batch = memory.get_batch()
+                    if batch is not None:
+                        # feed back to the agent on every FRAME_SKIPPING frame
+                        if iteration % FRAME_SKIPPING == 0:
+                            agent.react(
+                                batch,
+                                centiseconds=((-reward) % 10) + 1
+                            )
 
                     if done:
                         # calculate components of reward

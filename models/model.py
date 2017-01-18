@@ -6,11 +6,12 @@ from keras import backend as K
 
 DIM = 84
 NUM_ACTIONS = 3
+LEARNING_SEQ_LEN = 4
 
 
 def get_model_deepmind(dim=DIM, num_actions=NUM_ACTIONS):
-    main_input = Input(shape=(dim, dim, 4))
-    input_shape = (-1, 4, dim, dim)
+    main_input = Input(shape=(dim, dim, LEARNING_SEQ_LEN))
+    input_shape = (-1, LEARNING_SEQ_LEN, dim, dim)
 
     x = Convolution2D(16, 8, 8, input_shape=input_shape, activation='relu',
                       subsample=(4, 4), border_mode='same', dim_ordering='tf')(main_input)
